@@ -1,0 +1,26 @@
+<resources>
+    <string name="app_name">RecordSound</string>
+    <!-- permission key set (s) -->
+    <string name="key_pm_preference_file">com.example.record_sound.preference_file_key</string>
+    <string name="key_pm_audio">key_pm_audio</string>
+    <string name="key_pm_read_external_storage">key_pm_r_external_storage"</string>
+    <string name="key_pm_write_external_storage">key_pm_w_external_storage</string>
+    <!-- permission key set (e) -->
+
+    <string name="audio_access_required">AUDIO access is required to record the sound.</string>
+    <string name="audio_access_unavailable"><b>AUDIO could not be opened</b>\nThis is occurs when the audio is not available.</string>
+    <string name="ok">OK</string>
+
+    <!-- dialog (s)-->
+    <string name="dlg_com_need_permission">Permission Need</string>
+    <string name="dlg_need_audio_permission">Audio permission needed for recording sound.</string>
+    <string name="dlg_need_read_ex_storage_permission">Read permission to external storage needed.</string>
+    <string name="dlg_need_write_ex_storage_permission">Writing permission to external storage needed for recording sound.</string>
+    <string name="dlg_need_modify_audio_settings_permission">need to modify audio settings.</string>
+    <!-- dialog (e)-->
+
+    <!-- button (s) -->
+    <string name="btn_open_setting">Open Setting</string>
+    <string name="btn_cancel">Cancel</string>
+    <!-- button (e) -->
+</resources>
