@@ -92,10 +92,10 @@ public class MainActivity extends AppCompatActivity {
                 break;
         }
 
-        Log.e("onRequestPm", "permissionToRecordAccepted : " + Boolean.toString(permissionToRecordAccepted));
-        Log.e("onRequestPm", "permissionToReadExternalStorage : " + Boolean.toString(permissionToReadExternalStorage));
-        Log.e("onRequestPm", "permissionToWriteExternalStorage : " + Boolean.toString(permissionToWriteExternalStorage));
-        Log.e("onRequestPm", "permissionToModifyAudioSettings : " + Boolean.toString(permissionToModifyAudioSettings));
+        //Log.e("onRequestPm", "permissionToRecordAccepted : " + Boolean.toString(permissionToRecordAccepted));
+        //Log.e("onRequestPm", "permissionToReadExternalStorage : " + Boolean.toString(permissionToReadExternalStorage));
+        //Log.e("onRequestPm", "permissionToWriteExternalStorage : " + Boolean.toString(permissionToWriteExternalStorage));
+        //Log.e("onRequestPm", "permissionToModifyAudioSettings : " + Boolean.toString(permissionToModifyAudioSettings));
     }
 
 
