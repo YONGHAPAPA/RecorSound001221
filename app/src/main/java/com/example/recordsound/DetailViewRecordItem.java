@@ -2,6 +2,7 @@ package com.example.recordsound;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.Intent;
 import android.graphics.Color;
@@ -24,13 +25,13 @@ import java.io.IOException;
 public class DetailViewRecordItem extends AppCompatActivity implements Visualizer.OnDataCaptureListener {
 
     MediaPlayer mediaPlayer;
-    Button playButton, stopButton;
+    Button playButton, stopButton, delButton;
 
     private Visualizer visualizer;
     private WaveformView waveFormView;
-
     private static final int CAPTURE_SIZE = 256;
 
+    private String recordId;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,14 +39,16 @@ public class DetailViewRecordItem extends AppCompatActivity implements Visualize
         setContentView(R.layout.activity_detail_view_record_item);
 
         Intent intent = getIntent();
-        String recordId = intent.getStringExtra(DisplayRecordListActivity.EXTRA_RECORD_ID);
+        this.recordId = intent.getStringExtra(DisplayRecordListActivity.EXTRA_RECORD_ID);
 
         TextView txtView = findViewById(R.id.txtRecordId);
-        txtView.setText(recordId);
+        txtView.setText(this.recordId);
 
         //mediaPlayer = new MediaPlayer();
         playButton = (Button) findViewById(R.id.btnPlaySound);
         stopButton = (Button) findViewById(R.id.btnPlayStop);
+        delButton = (Button) findViewById(R.id.btn_delete);
+
         waveFormView = (WaveformView) findViewById(R.id.waveform_view);
 
         RendererFactory rendererFactory = new RendererFactory();
@@ -80,7 +83,26 @@ public class DetailViewRecordItem extends AppCompatActivity implements Visualize
             }
         });
 
+        delButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                //recordId
+                deleteAudio(Long.parseLong(recordId));
 
+            }
+        });
+
+
+    }
+
+
+    private void deleteAudio(long id){
+        Log.e("1", "deleteContent > " + toString().valueOf(id));
+
+        ContentResolver contentResolver = getContentResolver();
+        Uri contentUri = ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, id);
+        contentResolver.delete(contentUri, null, null);
+        finish();
     }
 
 

@@ -33,22 +33,21 @@ public class DisplayRecordListActivity extends AppCompatActivity {
         lv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-
                 //Log.d("onclick", Long.toString(id));
                 RecordItem item = (RecordItem) parent.getItemAtPosition(position);
-
-                Log.d("record Id", Long.toString(item.getId()));
-                Log.d("display Name", item.getDisplayName());
-
+                //Log.d("record Id", Long.toString(item.getId()));
+                //Log.d("display Name", item.getDisplayName());
                 gotoRecordDetailView(item.getId());
             }
         });
     }
 
+
     private void gotoRecordDetailView(Long id){
         Intent intent = new Intent(this, DetailViewRecordItem.class);
         intent.putExtra(EXTRA_RECORD_ID, Long.toString(id));
         startActivity(intent);
+        this.finish();
     }
 
 

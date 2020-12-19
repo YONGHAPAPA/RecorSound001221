@@ -16,13 +16,7 @@
         <include
             layout="@layout/content_main"
             android:layout_width="match_parent"
-            android:layout_height="445dp" />
-
-        <TextView
-            android:id="@+id/txtRecordId"
-            android:layout_width="match_parent"
-            android:layout_height="53dp"
-            android:text="RECORD FILE NAME" />
+            android:layout_height="300dp" />
 
         <Button
             android:id="@+id/btnPlaySound"
@@ -35,5 +29,22 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="STOP" />
+
+        <Button
+            android:id="@+id/btn_delete"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="DELETE" />
     </LinearLayout>
+
+    <TextView
+        android:id="@+id/txtRecordId"
+        android:layout_width="match_parent"
+        android:layout_height="46dp"
+        android:text="RECORD FILE NAME"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>

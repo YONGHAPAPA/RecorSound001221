@@ -32,11 +32,15 @@ import com.google.android.material.snackbar.Snackbar;
 
 import java.io.File;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 
 import com.google.android.material.snackbar.Snackbar;
 
 import java.io.File;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -139,11 +143,8 @@ public class MainActivity extends AppCompatActivity {
         playButton.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View view){
-                Log.d("Media", "start play audio.......");
-                //play audio file logic...
-
-                Log.d("audioID", Long.toString(lastMediaId));
-
+                //Log.d("Media", "start play audio.......");
+                //Log.d("audioID", Long.toString(lastMediaId));
                 if(Long.toString(lastMediaId) != ""){
                     try{
                         playAudio(lastMediaId);
@@ -171,9 +172,8 @@ public class MainActivity extends AppCompatActivity {
     public void startRecordAudio(){
         //Check Record Audio & Write external storage Permission
         if(checkAllPermissionForRecording()){
-            Log.d("complete", "check All Permission^^");
-
-            runningRecord();
+            //Log.d("complete", "check All Permission^^");
+            startRecord();
         }
     }
 
@@ -184,9 +184,9 @@ public class MainActivity extends AppCompatActivity {
         checkPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE, this.REQUEST_WRITE_EXTERNAL_STORAGE_PERMISSION);
         checkPermission(this, Manifest.permission.MODIFY_AUDIO_SETTINGS, this.REQUEST_MODIFY_AUDIO_SETTINGS_PERMISSION);
 
-        Log.d("startRecordAudio", "permissionToRecordAccepted > " + Boolean.toString(permissionToRecordAccepted));
-        Log.d("startRecordAudio", "permissionToReadExternalStorage > " + Boolean.toString(permissionToReadExternalStorage));
-        Log.d("startRecordAudio", "permissionToWriteExternalStorage > " + Boolean.toString(permissionToWriteExternalStorage));
+//        Log.d("startRecordAudio", "permissionToRecordAccepted > " + Boolean.toString(permissionToRecordAccepted));
+//        Log.d("startRecordAudio", "permissionToReadExternalStorage > " + Boolean.toString(permissionToReadExternalStorage));
+//        Log.d("startRecordAudio", "permissionToWriteExternalStorage > " + Boolean.toString(permissionToWriteExternalStorage));
 
         if(!permissionToRecordAccepted) {
             openDialogForAskPermission(getString(R.string.dlg_need_audio_permission));
@@ -214,7 +214,7 @@ public class MainActivity extends AppCompatActivity {
     //Check Permission & Reqeust permission if not have
     private void checkPermission(Context ctx, String permission, int requestCode){
         try{
-            Log.e("checkPermission", "start >>>>>>>>>>>>>>>>>");
+            //Log.e("checkPermission", "start >>>>>>>>>>>>>>>>>");
             if(ActivityCompat.checkSelfPermission(ctx, permission) != PackageManager.PERMISSION_GRANTED){
                 if(ActivityCompat.shouldShowRequestPermissionRationale(this, permission)){
                     //show additional rationale to user if the permission was not granted.
@@ -250,19 +250,19 @@ public class MainActivity extends AppCompatActivity {
 
             switch(requestCode){
                 case REQUEST_RECORD_AUDIO_PERMISSION:
-                    Log.e("permission", "permissionToRecordAccepted: " + Boolean.toString(permissionToRecordAccepted));
+                    //Log.e("permission", "permissionToRecordAccepted: " + Boolean.toString(permissionToRecordAccepted));
                     break;
                 case REQUEST_WRITE_EXTERNAL_STORAGE_PERMISSION:
-                    Log.e("permission", "permissionToWriteExternalStorage: " + Boolean.toString(permissionToWriteExternalStorage));
+                    //Log.e("permission", "permissionToWriteExternalStorage: " + Boolean.toString(permissionToWriteExternalStorage));
                     break;
                 case REQUEST_READ_EXTERNAL_STORAGE_PERMISSION:
-                    Log.e("permission", "permissionToReadExternalStorage: " + Boolean.toString(permissionToReadExternalStorage));
+                    //Log.e("permission", "permissionToReadExternalStorage: " + Boolean.toString(permissionToReadExternalStorage));
                     break;
                 case REQUEST_MODIFY_AUDIO_SETTINGS_PERMISSION:
-                    Log.e("permission", "permissionToModifyAudioSettings: " + Boolean.toString(permissionToModifyAudioSettings));
+                    //Log.e("permission", "permissionToModifyAudioSettings: " + Boolean.toString(permissionToModifyAudioSettings));
                 default:
             }
-            Log.e("checkPermission", "end >>>>>>>>>>>>>>>>>");
+            //Log.e("checkPermission", "end >>>>>>>>>>>>>>>>>");
         } catch(Exception e){
             Log.e("checkPermission", e.getMessage());
         }
@@ -294,16 +294,25 @@ public class MainActivity extends AppCompatActivity {
         dialog.show();
     }
 
-    private void runningRecord() {
+    private void startRecord() {
         Log.d("step", "recording start .....");
 
         startButton.setEnabled(false);
         stopButton.setEnabled(true);
 
+
         File dir = getExternalCacheDir();
 
+        //set prefix as today date
+        Date currentDate = Calendar.getInstance().getTime();
+        //Log.e("1", "currentDate > " + currentDate.toString());
+        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+        String toDay = df.format(currentDate);
+
+        String prefix = "[" + toDay + "]sample_";
+
         try{
-            audiofile = File.createTempFile("sound_", ".3gp", dir);
+            audiofile = File.createTempFile(prefix, ".3gp", dir);
         } catch (IOException ex){
             Log.e("runningRecord", ex.getMessage());
             return;
@@ -426,8 +435,6 @@ public class MainActivity extends AppCompatActivity {
         Intent intent = new Intent(this, DisplayRecordListActivity.class);
         startActivity(intent);
     }
-
-
 
 
     public void appendLog(TextView tv, String key, String msg){
