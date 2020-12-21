@@ -171,7 +171,7 @@ public class DetailViewRecordItem extends AppCompatActivity implements Visualize
         //Log.e("getMaxCaptureRate", Integer.toString(Visualizer.getMaxCaptureRate()));
 
         int rate = Visualizer.getMaxCaptureRate(); //milliHz
-        rate = 1000;
+        rate = 20000;
 
         //Log.e("millihz", Integer.toString(millihz));
 

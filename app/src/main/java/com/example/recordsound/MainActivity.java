@@ -4,6 +4,7 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 
 import android.Manifest;
 import android.content.ContentResolver;
@@ -28,6 +29,8 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.recordsound.service.ForegroundRecordService;
+import com.example.recordsound.service.MyForegroundService;
 import com.google.android.material.snackbar.Snackbar;
 
 import java.io.File;
@@ -44,6 +47,7 @@ import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity {
 
+
     MediaRecorder recorder;
     MediaPlayer mMediaPlayer = null;
 
@@ -51,7 +55,7 @@ public class MainActivity extends AppCompatActivity {
 
     File audiofile = null;
     static final String TAG = "MediaRecording";
-    Button startButton,stopButton,playButton,listButton;
+    Button startButton,stopButton,playButton,listButton, startSvcButton, stopSvcButton;
     TextView txtV1, txtV2;
     View mainLayout;
 
@@ -112,6 +116,8 @@ public class MainActivity extends AppCompatActivity {
         stopButton = (Button) findViewById(R.id.button2);
         listButton = (Button) findViewById(R.id.btn_list);
         playButton = (Button) findViewById(R.id.btn_play);
+        startSvcButton = (Button) findViewById(R.id.btnStartSvc);
+        stopSvcButton = (Button) findViewById(R.id.btnStopSvc);
 
         txtV1 = (TextView) findViewById(R.id.textView1);
         txtV2 = (TextView) findViewById(R.id.textView2);
@@ -154,6 +160,48 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         });
+
+
+        startSvcButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                startService();
+            }
+        });
+
+        stopSvcButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                stopService();
+            }
+        });
+    }
+
+
+    public void startService() {
+        /*Intent serviceIntent = new Intent(this, MyForegroundService.class);
+        *//*serviceIntent.putExtra("inputExtra", "Foreground Service Example in Android");
+        ContextCompat.startForegroundService(this, serviceIntent);*//*
+        startService(serviceIntent);*/
+
+        Log.e(TAG, "Starting the foreground-thread");
+        Intent serviceIntent = new Intent(this, ForegroundRecordService.class);
+        serviceIntent.putExtra("inputExtra", "Foreground Record Service Example in android");
+        //ContextCompat.startForegroundService(this, serviceIntent);
+        startService(serviceIntent);
+
+
+
+    }
+
+    public void stopService() {
+//        Intent serviceIntent = new Intent(this, MyForegroundService.class);
+//        stopService(serviceIntent);
+
+        Log.e(TAG, "Stoping the foreground-thread");
+        Intent serviceIntent = new Intent(this, ForegroundRecordService.class);
+        stopService(serviceIntent);
+        //getApplicationContext().stopService(serviceIntent);
     }
 
 
