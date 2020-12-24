@@ -490,6 +490,8 @@ public class MainActivity extends AppCompatActivity {
         String newCnt = "[" + key + "]" + msg;
         txtVCnt = txtVCnt + "\r\n" + newCnt + "\r\n";
         tv.setText(txtVCnt);
+
+        //Min
     }
 
 
