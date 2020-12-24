@@ -5,6 +5,7 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.core.content.PermissionChecker;
 
 import android.Manifest;
 import android.content.ContentResolver;
@@ -29,6 +30,7 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.recordsound.components.PermissionsUtil;
 import com.example.recordsound.service.ForegroundRecordService;
 import com.example.recordsound.service.MyForegroundService;
 import com.google.android.material.snackbar.Snackbar;
@@ -43,6 +45,7 @@ import com.google.android.material.snackbar.Snackbar;
 import java.io.File;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity {
@@ -175,6 +178,15 @@ public class MainActivity extends AppCompatActivity {
                 stopService();
             }
         });
+
+
+
+        //Min Test
+        PermissionsUtil permissionsUtil = new PermissionsUtil();
+
+        HashMap<Integer, String> requestParams = new HashMap<Integer, String>();
+        requestParams.put(REQUEST_RECORD_AUDIO_PERMISSION, Manifest.permission.RECORD_AUDIO);
+        permissionsUtil.checkPermissions(this, requestParams, false );
     }
 
 
