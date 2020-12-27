@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="P001">Audio permission is required for Recording.</string>
+    <string name="P002">Permissions is required.</string>
+    <string name="P003">%1s permission is required.\nwould you like to grant this permission?</string>
+    <string name="P004">It need to access to permission for running this application.</string>
+</resources>
