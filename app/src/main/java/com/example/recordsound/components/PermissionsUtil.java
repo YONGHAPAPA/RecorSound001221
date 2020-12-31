@@ -9,12 +9,16 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
 import androidx.core.app.ActivityCompat;
 
+import com.example.recordsound.MainActivity;
 import com.example.recordsound.R;
+import com.example.recordsound.vo.PermissionVO;
 import com.google.android.material.snackbar.BaseTransientBottomBar;
 import com.google.android.material.snackbar.Snackbar;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -22,7 +26,8 @@ import java.util.Set;
 
 public class PermissionsUtil{
 
-    String TAG = "[PERMISSIONS_UTIL]";
+    //String TAG = "[PERMISSIONS_UTIL]";
+    static final String TAG = "RS_" + MainActivity.class.getSimpleName();
 
     public Map<Integer, Map<Integer, String>> getPermissions(Context context, View view, HashMap<Integer, String> permissions){
 
@@ -44,54 +49,63 @@ public class PermissionsUtil{
     }
 
 
-    public void requestPermission(Context context, View view, HashMap<Integer, HashMap<String, Integer>> reqestPermissions) {
+    public void requestPermission(Context context, View view, PermissionVO permission, ActivityResultLauncher<String> requestPermissionLauncher) {
 
         try{
 
             Activity activity = (Activity) context;
+            //for(Map.Entry<Integer, HashMap<String, Integer>> requestPermission : reqestPermissions.entrySet()){
+            //Log.d(TAG, "request Permission >>>>> " + permission.getPermission());
 
-            for(Map.Entry<Integer, HashMap<String, Integer>> requestPermission : reqestPermissions.entrySet()){
+            if(ActivityCompat.checkSelfPermission(context, permission.getPermission()) != PackageManager.PERMISSION_GRANTED){
 
-                for(Map.Entry<String, Integer> permission : requestPermission.getValue().entrySet()){
+                Boolean permissionRational = ActivityCompat.shouldShowRequestPermissionRationale(activity, permission.getPermission());
+                Log.d(TAG, "permissionRational >>> " + permissionRational);
 
-                    Log.d(TAG, "request Permission >>>>> " + permission.getKey());
+                if(ActivityCompat.shouldShowRequestPermissionRationale(activity, permission.getPermission())){
 
-                    if(ActivityCompat.checkSelfPermission(context, permission.getKey()) != PackageManager.PERMISSION_GRANTED){
-                        if(ActivityCompat.shouldShowRequestPermissionRationale(activity, permission.getKey())){
+                    //사용자가 권한처리 팝업을 중지처리한상태로 강제로 팝업창을 띄워서 다시 설정할수 있도록 해준다.
+                    //Log.d(TAG, "requestPermissionName >> " + permission.getPermission());
+                    CommonUtil.openPositiveNegativeDialog(context, context.getString(R.string.P002), context.getString(R.string.P003, permission.getPermission()), context.getString(R.string.C001), context.getString(R.string.C002), new DialogInterface.OnClickListener() {
 
-                            //사용자가 권한처리 팝업을 중지처리한상태로 강제로 팝업창을 띄워서 다시 설정할수 있도록 해준다.
-                            Log.d(TAG, "requestPermissionName >> " + permission.getKey());
-                            CommonUtil.openPositiveNegativeDialog(context, context.getString(R.string.P002), context.getString(R.string.P003, permission.getKey()), context.getString(R.string.C001), context.getString(R.string.C002), new DialogInterface.OnClickListener() {
-
-                                @Override
-                                public void onClick(DialogInterface dialog, int which) {
-                                    Log.d(TAG, "Request permission : " + permission.getKey());
-                                    ActivityCompat.requestPermissions(activity, new String[]{ permission.getKey() }, Integer.parseInt(requestPermission.getKey().toString()));
-                                }
-                            }, new DialogInterface.OnClickListener() {
-                                @Override
-                                public void onClick(DialogInterface dialog, int which) {
-
-                                    Log.d(TAG, "CANCEL >>>>>>>>>>>>>>>>>>>>>>>>>>");
-                                    Toast.makeText(context, R.string.P004, Toast.LENGTH_LONG).show();
-                                }
-                            });
-
-                        } else {
-
-                            //권한설정을 요청한다.
-                            ActivityCompat.requestPermissions(activity, new String[] { permission.getKey().toString() }, Integer.parseInt(requestPermission.getKey().toString()));
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            //Log.d(TAG, "Request permission : " + permission.getPermission());
+                            //ActivityCompat.requestPermissions(activity, new String[]{ permission.getPermission() }, permission.getRequestId());
+                            requestPermissionLauncher.launch(permission.getPermission());
                         }
-                    }
+                    }, new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+
+                            Log.d(TAG, "CANCEL >>>>>>>>>>>>>>>>>>>>>>>>>>");
+                            Toast.makeText(context, R.string.P004, Toast.LENGTH_LONG).show();
+                        }
+                    });
+
+                } else {
+
+                    //권한설정을 요청한다.
+                    Log.d(TAG, "request final .>>> " + permission.getPermission());
+                    //ActivityCompat.requestPermissions(activity, new String[] { permission.getPermission() }, permission.getRequestId());
+                    requestPermissionLauncher.launch(permission.getPermission());
                 }
             }
+
+
 
         } catch (Exception e){
             Log.e(TAG, "requestPermission >> " + e.getMessage());
         }
     }
 
-    public void requestPermissions(Activity activity, HashMap<Integer, String> requestPermissions){
+    public void requestPermissions(Context context, View view, ArrayList<PermissionVO> permissions, ActivityResultLauncher<String[]> requestPermissionsLauncher){
 
+        //String[] result = permissions.toArray();
+
+        /*for(Integer i=0; i < result.length; i++){
+            Log.d(TAG, result[i]);
+        }*/
+        //requestPermissionsLauncher.launch();
     }
 }

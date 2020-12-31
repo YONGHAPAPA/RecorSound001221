@@ -1,9 +1,13 @@
 package com.example.recordsound;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
+
 
 import android.Manifest;
 import android.content.ContentResolver;
@@ -30,6 +34,7 @@ import android.widget.Toast;
 
 import com.example.recordsound.components.PermissionsUtil;
 import com.example.recordsound.service.ForegroundRecordService;
+import com.example.recordsound.vo.PermissionVO;
 import com.google.android.material.snackbar.Snackbar;
 
 import java.io.File;
@@ -38,8 +43,12 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.ListIterator;
 import java.util.Locale;
 import java.util.Map;
 
@@ -52,7 +61,8 @@ public class MainActivity extends AppCompatActivity {
     private static final int MODIFY_AUDIO_SETTINGS_PERMISSION_REQUEST_CD = 103;
 
     //private String [] permissions = {Manifest.permission.RECORD_AUDIO, Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.MODIFY_AUDIO_SETTINGS};
-    private HashMap<Integer, HashMap<String, Integer>> permissionsMap = new HashMap<>();
+    //private HashMap<Integer, String[]> permissionsMap = new HashMap<>();
+    ArrayList<PermissionVO> permissionList = new ArrayList<>();
 
 
     MediaRecorder recorder;
@@ -61,7 +71,11 @@ public class MainActivity extends AppCompatActivity {
     long lastMediaId;
 
     File audiofile = null;
-    static final String TAG = "MAIN_ACTIVITY";
+    //static final String TAG = "MAIN_ACTIVITY";
+    // static final String TAG = MainActivity.class.getSimpleName();
+    static final String TAG = "RS_" + MainActivity.class.getSimpleName();
+
+
     Button startButton,stopButton,playButton,listButton, startSvcButton, stopSvcButton;
     TextView txtV1, txtV2;
     View mainLayout;
@@ -78,13 +92,35 @@ public class MainActivity extends AppCompatActivity {
 
 
     private void init(){
-
         //Init Permission variable;
-        this.permissionsMap.put(AUDIO_PERMISSION_REQUEST_CD, new HashMap<String, Integer>(){{put(Manifest.permission.RECORD_AUDIO, PackageManager.PERMISSION_DENIED);}});
-        this.permissionsMap.put(READ_EXTERNAL_STORAGE_PERMISSION_REQUEST_CD, new HashMap<String, Integer>(){{put(Manifest.permission.READ_EXTERNAL_STORAGE, PackageManager.PERMISSION_DENIED);}});
-        this.permissionsMap.put(WRITE_EXTERNAL_STORAGE_PERMISSION_REQUEST_CD, new HashMap<String, Integer>(){{put(Manifest.permission.WRITE_EXTERNAL_STORAGE, PackageManager.PERMISSION_DENIED);}});
-        this.permissionsMap.put(MODIFY_AUDIO_SETTINGS_PERMISSION_REQUEST_CD, new HashMap<String, Integer>(){{put(Manifest.permission.MODIFY_AUDIO_SETTINGS, PackageManager.PERMISSION_DENIED);}});
+
+        permissionList.add(new PermissionVO(AUDIO_PERMISSION_REQUEST_CD, Manifest.permission.RECORD_AUDIO, -1));
+        permissionList.add(new PermissionVO(READ_EXTERNAL_STORAGE_PERMISSION_REQUEST_CD, Manifest.permission.READ_EXTERNAL_STORAGE, -1));
+        permissionList.add(new PermissionVO(WRITE_EXTERNAL_STORAGE_PERMISSION_REQUEST_CD, Manifest.permission.WRITE_EXTERNAL_STORAGE, -1));
+        permissionList.add(new PermissionVO(MODIFY_AUDIO_SETTINGS_PERMISSION_REQUEST_CD, Manifest.permission.MODIFY_AUDIO_SETTINGS, -1));
     }
+
+
+
+
+
+    private ActivityResultLauncher<String> requestPermissionLauncher = registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted -> {
+        if(isGranted){
+
+
+        } else {
+
+        }
+    });
+
+    private ActivityResultLauncher<String[]> requestPermissionsLauncher = registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(), permissions -> {
+        Map<String, Boolean> map = permissions;
+        for(Map.Entry<String, Boolean> elem : map.entrySet()){
+            Log.d(TAG, "requestPermissionsLauncher > " + elem.getKey() + " / " + elem.getValue());
+        }
+    });
+
+
 
 
     @Override
@@ -93,31 +129,19 @@ public class MainActivity extends AppCompatActivity {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
 
         Log.d(TAG, "onRequestPermissionsResult >>>>>  " + permissions[0]);
-
-
-        switch(requestCode){
-            case AUDIO_PERMISSION_REQUEST_CD:
-                permissionToRecordAccepted = grantResults[0] == PackageManager.PERMISSION_GRANTED;
-                break;
-
-            case READ_EXTERNAL_STORAGE_PERMISSION_REQUEST_CD :
-                permissionToReadExternalStorage = grantResults[0] == PackageManager.PERMISSION_GRANTED;
-                break;
-
-            case WRITE_EXTERNAL_STORAGE_PERMISSION_REQUEST_CD :
-                this.permissionToWriteExternalStorage = grantResults[0] == PackageManager.PERMISSION_GRANTED;
-                break;
-
-            case MODIFY_AUDIO_SETTINGS_PERMISSION_REQUEST_CD :
-                this.permissionToModifyAudioSettings = grantResults[0] == PackageManager.PERMISSION_GRANTED;
-                break;
+        for(PermissionVO vo : permissionList){
+            if(vo.getRequestId().equals(requestCode)){
+                vo.setIsGranted(grantResults[0]);
+            }
+            break;
         }
 
-        //Log.e("onRequestPm", "permissionToRecordAccepted : " + Boolean.toString(permissionToRecordAccepted));
-        //Log.e("onRequestPm", "permissionToReadExternalStorage : " + Boolean.toString(permissionToReadExternalStorage));
-        //Log.e("onRequestPm", "permissionToWriteExternalStorage : " + Boolean.toString(permissionToWriteExternalStorage));
-        //Log.e("onRequestPm", "permissionToModifyAudioSettings : " + Boolean.toString(permissionToModifyAudioSettings));
+        for(PermissionVO vo: permissionList){
+            //if(vo.getIsGranted().)
+        }
     }
+
+
 
 
     @Override
@@ -183,10 +207,12 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 //startService();
+                Log.d(TAG, "start service.....");
 
                 // Min Test
                 PermissionsUtil permissionsUtil = new PermissionsUtil();
-                permissionsUtil.requestPermission(MainActivity.this, mainLayout, permissionsMap);
+                //permissionsUtil.requestPermission(MainActivity.this, mainLayout, requestPermissionLauncher, );
+                permissionsUtil.requestPermissions(MainActivity.this, mainLayout, permissionList, requestPermissionsLauncher);
             }
         });
 
@@ -196,12 +222,6 @@ public class MainActivity extends AppCompatActivity {
                 stopService();
             }
         });
-
-
-
-
-
-
     }
 
 
