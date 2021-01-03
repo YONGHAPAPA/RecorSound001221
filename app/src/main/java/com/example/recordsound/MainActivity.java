@@ -39,6 +39,7 @@ import com.google.android.material.snackbar.Snackbar;
 
 import java.io.File;
 import java.io.IOException;
+import java.security.Permissions;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 
@@ -91,9 +92,8 @@ public class MainActivity extends AppCompatActivity {
     //private String [] sharedPmPrefKeys = {getString(R.string.key_pm_audio), getString(R.string.key_pm_read_external_storage), getString(R.string.key_pm_write_external_storage)};
 
 
-    private void init(){
+    private void initPermissions(){
         //Init Permission variable;
-
         permissionList.add(new PermissionVO(AUDIO_PERMISSION_REQUEST_CD, Manifest.permission.RECORD_AUDIO, -1));
         permissionList.add(new PermissionVO(READ_EXTERNAL_STORAGE_PERMISSION_REQUEST_CD, Manifest.permission.READ_EXTERNAL_STORAGE, -1));
         permissionList.add(new PermissionVO(WRITE_EXTERNAL_STORAGE_PERMISSION_REQUEST_CD, Manifest.permission.WRITE_EXTERNAL_STORAGE, -1));
@@ -148,7 +148,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        init();
+        initPermissions();
 
         setContentView(R.layout.activity_main);
 
@@ -211,7 +211,11 @@ public class MainActivity extends AppCompatActivity {
 
                 // Min Test
                 PermissionsUtil permissionsUtil = new PermissionsUtil();
-                //permissionsUtil.requestPermission(MainActivity.this, mainLayout, requestPermissionLauncher, );
+
+//                for(PermissionVO permission: permissionList){
+//                    permissionsUtil.requestPermission(MainActivity.this, mainLayout, permission ,requestPermissionLauncher);
+//                }
+
                 permissionsUtil.requestPermissions(MainActivity.this, mainLayout, permissionList, requestPermissionsLauncher);
             }
         });

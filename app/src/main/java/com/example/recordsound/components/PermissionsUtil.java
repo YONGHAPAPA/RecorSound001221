@@ -27,7 +27,7 @@ import java.util.Set;
 public class PermissionsUtil{
 
     //String TAG = "[PERMISSIONS_UTIL]";
-    static final String TAG = "RS_" + MainActivity.class.getSimpleName();
+    static final String TAG = "RS_" + PermissionsUtil.class.getSimpleName();
 
     public Map<Integer, Map<Integer, String>> getPermissions(Context context, View view, HashMap<Integer, String> permissions){
 
@@ -88,7 +88,7 @@ public class PermissionsUtil{
                     //권한설정을 요청한다.
                     Log.d(TAG, "request final .>>> " + permission.getPermission());
                     //ActivityCompat.requestPermissions(activity, new String[] { permission.getPermission() }, permission.getRequestId());
-                    requestPermissionLauncher.launch(permission.getPermission());
+                    //equestPermissionLauncher.launch(permission.getPermission());
                 }
             }
 
@@ -99,13 +99,47 @@ public class PermissionsUtil{
         }
     }
 
+
     public void requestPermissions(Context context, View view, ArrayList<PermissionVO> permissions, ActivityResultLauncher<String[]> requestPermissionsLauncher){
 
-        //String[] result = permissions.toArray();
+        ArrayList<String> voList = new ArrayList<>();
+        Activity activity = (Activity)context;
+        Boolean showPermissionRationale = true;
 
-        /*for(Integer i=0; i < result.length; i++){
-            Log.d(TAG, result[i]);
-        }*/
-        //requestPermissionsLauncher.launch();
+        try{
+
+            int i = 0;
+            String[] permissionForRequest;
+            ArrayList<String> arrPermissionTemp = new ArrayList<>();
+
+            for(PermissionVO vo: permissions){
+                //Log.d(TAG, "vo.getPermission > " + vo.getPermission());
+
+                if(ActivityCompat.checkSelfPermission(context, vo.getPermission()) != PackageManager.PERMISSION_GRANTED){
+
+                    //voList.add(vo.getPermission());
+                    showPermissionRationale = ActivityCompat.shouldShowRequestPermissionRationale(activity, vo.getPermission());
+                    Log.d(TAG, "showPermissionRationale: " + showPermissionRationale + " > " + vo.getPermission());
+
+                    if(ActivityCompat.shouldShowRequestPermissionRationale(activity, vo.getPermission())){
+                        arrPermissionTemp.add(vo.getPermission());
+                    } else {
+                        //Rationale UI : False 일경우 Permission setting 화면으로 이동
+                    }
+                }
+            }
+
+            if(arrPermissionTemp.size() > 0){
+                permissionForRequest = arrPermissionTemp.toArray(new String[arrPermissionTemp.size()-1]);
+
+//                for(String per: permissionForRequest){
+//                    Log.d(TAG, "per > " + per);
+//                }
+
+                requestPermissionsLauncher.launch(permissionForRequest);
+            }
+        } catch (Exception e){
+            Log.e(TAG, "requestPermissions >> " + e.getMessage());
+        }
     }
 }
