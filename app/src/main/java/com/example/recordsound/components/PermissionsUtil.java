@@ -5,6 +5,8 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.net.Uri;
+import android.provider.Settings;
 import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
@@ -92,8 +94,6 @@ public class PermissionsUtil{
                 }
             }
 
-
-
         } catch (Exception e){
             Log.e(TAG, "requestPermission >> " + e.getMessage());
         }
@@ -110,10 +110,12 @@ public class PermissionsUtil{
 
             int i = 0;
             String[] permissionForRequest;
-            ArrayList<String> arrPermissionTemp = new ArrayList<>();
+            ArrayList<String> showUIPermissions = new ArrayList<>();
+            ArrayList<String> noShowUIPermissions = new ArrayList<>();
 
             for(PermissionVO vo: permissions){
-                //Log.d(TAG, "vo.getPermission > " + vo.getPermission());
+
+                //Log.d(TAG, "checkSelfPermission > " + vo.getPermission() + " > "  + ActivityCompat.checkSelfPermission(context, vo.getPermission()));
 
                 if(ActivityCompat.checkSelfPermission(context, vo.getPermission()) != PackageManager.PERMISSION_GRANTED){
 
@@ -121,25 +123,58 @@ public class PermissionsUtil{
                     showPermissionRationale = ActivityCompat.shouldShowRequestPermissionRationale(activity, vo.getPermission());
                     Log.d(TAG, "showPermissionRationale: " + showPermissionRationale + " > " + vo.getPermission());
 
+                    //permissionsForRequest.add(vo.getPermission());
+
                     if(ActivityCompat.shouldShowRequestPermissionRationale(activity, vo.getPermission())){
-                        arrPermissionTemp.add(vo.getPermission());
+                         showUIPermissions.add(vo.getPermission());
                     } else {
                         //Rationale UI : False 일경우 Permission setting 화면으로 이동
+                        noShowUIPermissions.add(vo.getPermission());
                     }
                 }
             }
 
-            if(arrPermissionTemp.size() > 0){
-                permissionForRequest = arrPermissionTemp.toArray(new String[arrPermissionTemp.size()-1]);
-
-//                for(String per: permissionForRequest){
-//                    Log.d(TAG, "per > " + per);
-//                }
-
+            if(showUIPermissions.size() > 0){
+                permissionForRequest = showUIPermissions.toArray(new String[showUIPermissions.size()-1]);
+                /*for(String per: permissionForRequest){
+                    Log.d(TAG, "per > " + per);
+                }*/
                 requestPermissionsLauncher.launch(permissionForRequest);
+            }
+
+            if(showUIPermissions.size() == 0 && noShowUIPermissions.size() > 0){
+
+                String kindOfPermissions = "";
+                for(String item: noShowUIPermissions){
+                    kindOfPermissions += item + ", ";
+                }
+
+                CommonUtil.openPositiveNegativeDialog(context, context.getString(R.string.P002), context.getString(R.string.P003, kindOfPermissions), context.getString(R.string.C001), context.getString(R.string.C002), new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        startIntentPermissionSetting(context);
+                    }
+                }, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        //Application 종료처리
+                    }
+                });
             }
         } catch (Exception e){
             Log.e(TAG, "requestPermissions >> " + e.getMessage());
         }
+    }
+
+
+    public void startIntentPermissionSetting(Context context){
+        Activity activity = (Activity)context;
+
+        Intent intent = new Intent();
+        intent.setAction(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+        Uri uri = Uri.fromParts("package", activity.getPackageName(), null);
+
+        intent.setData(uri);
+        activity.startActivity(intent);
     }
 }

@@ -115,9 +115,21 @@ public class MainActivity extends AppCompatActivity {
 
     private ActivityResultLauncher<String[]> requestPermissionsLauncher = registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(), permissions -> {
         Map<String, Boolean> map = permissions;
+
+        Boolean isGranted = false;
+
         for(Map.Entry<String, Boolean> elem : map.entrySet()){
             Log.d(TAG, "requestPermissionsLauncher > " + elem.getKey() + " / " + elem.getValue());
+
+            //권한처리가 안될경우 메뉴얼로 설정할수 있도록 권한 설정화면이동
+            isGranted = elem.getValue();
         }
+
+
+//        if(!isGranted){
+//            PermissionsUtil permissionsUtil = new PermissionsUtil();
+//            permissionsUtil.startIntentPermissionSetting(this);
+//        }
     });
 
 
@@ -129,6 +141,9 @@ public class MainActivity extends AppCompatActivity {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
 
         Log.d(TAG, "onRequestPermissionsResult >>>>>  " + permissions[0]);
+
+
+
         for(PermissionVO vo : permissionList){
             if(vo.getRequestId().equals(requestCode)){
                 vo.setIsGranted(grantResults[0]);
