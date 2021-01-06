@@ -23,7 +23,11 @@ import java.util.Locale;
 
 public class MyBroadcastReceiver extends BroadcastReceiver {
 
-    private static final String TAG = "MyBroadcastReceiver";
+
+    private static final String TAG_PREFIX = "MZ_";
+    private static String TAG = TAG_PREFIX + MyBroadcastReceiver.class.getSimpleName();
+
+
     Context context;
     File audiofile;
     MediaRecorder recorder;

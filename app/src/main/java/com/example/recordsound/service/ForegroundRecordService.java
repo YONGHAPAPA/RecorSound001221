@@ -95,7 +95,8 @@ public class ForegroundRecordService extends Service {
         }
     }
 
-    private static String TAG = "ForegroundRecordService";
+    private static final String TAG_PREFIX = "MZ_";
+    private static String TAG = TAG_PREFIX + ForegroundRecordService.class.getSimpleName();
 
     //the audio recording options
     private static final int RECORDING_RATE = 44100;

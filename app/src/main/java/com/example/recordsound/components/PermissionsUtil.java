@@ -28,8 +28,8 @@ import java.util.Set;
 
 public class PermissionsUtil{
 
-    //String TAG = "[PERMISSIONS_UTIL]";
-    static final String TAG = "RS_" + PermissionsUtil.class.getSimpleName();
+    private static final String TAG_PREFIX = "MZ_";
+    static final String TAG = TAG_PREFIX + PermissionsUtil.class.getSimpleName();
 
     public Map<Integer, Map<Integer, String>> getPermissions(Context context, View view, HashMap<Integer, String> permissions){
 
@@ -64,7 +64,7 @@ public class PermissionsUtil{
                 Boolean permissionRational = ActivityCompat.shouldShowRequestPermissionRationale(activity, permission.getPermission());
                 Log.d(TAG, "permissionRational >>> " + permissionRational);
 
-                if(ActivityCompat.shouldShowRequestPermissionRationale(activity, permission.getPermission())){
+                if(!ActivityCompat.shouldShowRequestPermissionRationale(activity, permission.getPermission())){
 
                     //사용자가 권한처리 팝업을 중지처리한상태로 강제로 팝업창을 띄워서 다시 설정할수 있도록 해준다.
                     //Log.d(TAG, "requestPermissionName >> " + permission.getPermission());
@@ -73,14 +73,11 @@ public class PermissionsUtil{
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
                             //Log.d(TAG, "Request permission : " + permission.getPermission());
-                            //ActivityCompat.requestPermissions(activity, new String[]{ permission.getPermission() }, permission.getRequestId());
-                            requestPermissionLauncher.launch(permission.getPermission());
+                            startIntentPermissionSetting(context);
                         }
                     }, new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
-
-                            Log.d(TAG, "CANCEL >>>>>>>>>>>>>>>>>>>>>>>>>>");
                             Toast.makeText(context, R.string.P004, Toast.LENGTH_LONG).show();
                         }
                     });
@@ -88,9 +85,9 @@ public class PermissionsUtil{
                 } else {
 
                     //권한설정을 요청한다.
-                    Log.d(TAG, "request final .>>> " + permission.getPermission());
+                    //Log.d(TAG, "request final .>>> " + permission.getPermission());
                     //ActivityCompat.requestPermissions(activity, new String[] { permission.getPermission() }, permission.getRequestId());
-                    //equestPermissionLauncher.launch(permission.getPermission());
+                    requestPermissionLauncher.launch(permission.getPermission());
                 }
             }
 
@@ -114,21 +111,13 @@ public class PermissionsUtil{
             ArrayList<String> noShowUIPermissions = new ArrayList<>();
 
             for(PermissionVO vo: permissions){
-
-                //Log.d(TAG, "checkSelfPermission > " + vo.getPermission() + " > "  + ActivityCompat.checkSelfPermission(context, vo.getPermission()));
-
                 if(ActivityCompat.checkSelfPermission(context, vo.getPermission()) != PackageManager.PERMISSION_GRANTED){
-
-                    //voList.add(vo.getPermission());
-                    showPermissionRationale = ActivityCompat.shouldShowRequestPermissionRationale(activity, vo.getPermission());
-                    Log.d(TAG, "showPermissionRationale: " + showPermissionRationale + " > " + vo.getPermission());
-
-                    //permissionsForRequest.add(vo.getPermission());
-
+//                    showPermissionRationale = ActivityCompat.shouldShowRequestPermissionRationale(activity, vo.getPermission());
+//                    Log.d(TAG, "showPermissionRationale: " + showPermissionRationale + " > " + vo.getPermission());
                     if(ActivityCompat.shouldShowRequestPermissionRationale(activity, vo.getPermission())){
                          showUIPermissions.add(vo.getPermission());
                     } else {
-                        //Rationale UI : False 일경우 Permission setting 화면으로 이동
+                        //Rationale UI : False 인 권한
                         noShowUIPermissions.add(vo.getPermission());
                     }
                 }
@@ -136,9 +125,6 @@ public class PermissionsUtil{
 
             if(showUIPermissions.size() > 0){
                 permissionForRequest = showUIPermissions.toArray(new String[showUIPermissions.size()-1]);
-                /*for(String per: permissionForRequest){
-                    Log.d(TAG, "per > " + per);
-                }*/
                 requestPermissionsLauncher.launch(permissionForRequest);
             }
 
@@ -149,15 +135,19 @@ public class PermissionsUtil{
                     kindOfPermissions += item + ", ";
                 }
 
-                CommonUtil.openPositiveNegativeDialog(context, context.getString(R.string.P002), context.getString(R.string.P003, kindOfPermissions), context.getString(R.string.C001), context.getString(R.string.C002), new DialogInterface.OnClickListener() {
+                CommonUtil.openPositiveNegativeDialog(context, context.getString(R.string.P002), context.getString(R.string.P003, kindOfPermissions), context.getString(R.string.C001), context.getString(R.string.C002),
+                  new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         startIntentPermissionSetting(context);
+//                        String[] req = noShowUIPermissions.toArray(new String[noShowUIPermissions.size()-1]);
+//                        requestPermissionsLauncher.launch(req);
                     }
                 }, new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        //Application 종료처리
+                        //Application 종료처리 또는 whatever to do....
+                        Toast.makeText(context, R.string.P004, Toast.LENGTH_LONG).show();
                     }
                 });
             }
