@@ -63,7 +63,7 @@ public class DisplayRecordListActivity extends AppCompatActivity {
                 MediaStore.Audio.Media.DATE_ADDED
         };
 
-        String selection = MediaStore.Audio.Media.DISPLAY_NAME + " like '%3gp'";
+        String selection = MediaStore.Audio.Media.DISPLAY_NAME + " like '%pcm'";
 
         Cursor cursor = getContentResolver().query(
                 MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,

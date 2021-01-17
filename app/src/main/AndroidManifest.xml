@@ -44,6 +44,18 @@
             android:enabled="true"
             android:exported="true"></service>
 
+        <service android:name=".service.RecordSoundService"
+            android:enabled="true"
+            android:exported="true"></service>
+
+        <service android:name=".service.PlaySoundService"
+            android:enabled="true"
+            android:exported="true"></service>
+
+        <service android:name=".service.AudioService"
+            android:enabled="true"
+            android:exported="true"></service>
+
         <receiver android:name=".broadcast.MyBroadcastReceiver" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />

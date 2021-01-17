@@ -13,6 +13,7 @@ import android.util.Log;
 import android.widget.Toast;
 
 import com.example.recordsound.service.ForegroundRecordService;
+import com.example.recordsound.service.PlaySoundService;
 
 import java.io.File;
 import java.io.IOException;
@@ -52,6 +53,13 @@ public class MyBroadcastReceiver extends BroadcastReceiver {
             case "ACTION_STOP_RECORD" :
                 stopRecordService(context);
                 break;
+
+            case "ACTION_START_PLAY" :
+                break;
+
+            case "ACTION_STOP_PLAY":
+                stopPlayAudioService(context);
+                break;
         }
 
 
@@ -63,9 +71,18 @@ public class MyBroadcastReceiver extends BroadcastReceiver {
     }
 
     private void stopRecordService(Context context) {
-        Log.e(TAG, "Stop Record Service from Receiver .....................");
+        Log.d(TAG, "Stop Record Service from Receiver .....................");
         Intent serviceIntent = new Intent(context, ForegroundRecordService.class);
         context.stopService(serviceIntent);
-        Log.e(TAG, "Complete Stop Record Service from Receiver .....................");
+        Log.d(TAG, "Complete Stop Record Service from Receiver .....................");
     }
+
+    private void stopPlayAudioService(Context context){
+        Intent serviceIntent = new Intent(context, PlaySoundService.class);
+        context.stopService(serviceIntent);
+        Log.d(TAG, "Stop Play Audio service!!!!");
+
+    }
+
+
 }

@@ -23,4 +23,11 @@
     <string name="btn_open_setting">Open Setting</string>
     <string name="btn_cancel">Cancel</string>
     <!-- button (e) -->
+
+    <!-- messages(s) -->
+    <string name="msg_start_recording">Recording sound is started.</string>
+    <string name="msg_stop_recording">Recording sound is stopped.</string>
+    <string name="msg_start_playAudio">Playing audio is started</string>
+    <string name="msg_stop_playAudio">Playing audio is stopped.</string>
+    <!-- messages(e) -->
 </resources>

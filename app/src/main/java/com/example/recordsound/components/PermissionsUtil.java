@@ -38,7 +38,7 @@ public class PermissionsUtil{
         try{
             for(Map.Entry entry : permissions.entrySet()){
 
-                Boolean isGranted = ActivityCompat.checkSelfPermission(context, entry.getValue().toString()) != PackageManager.PERMISSION_GRANTED ? false : true;
+                Boolean isGranted = (ActivityCompat.checkSelfPermission(context, entry.getValue().toString()) != PackageManager.PERMISSION_GRANTED) ? false : true;
 
                 //Log.d(TAG, "checkPermissions >>> " + entry.getValue() + " : " + isGranted);
                 result.put(Integer.parseInt(entry.getKey().toString()), new HashMap(){{put(entry.getValue().toString(), ActivityCompat.checkSelfPermission(context, entry.getValue().toString()));}});
