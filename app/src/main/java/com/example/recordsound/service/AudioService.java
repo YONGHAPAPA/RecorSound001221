@@ -26,12 +26,20 @@ import com.example.recordsound.R;
 import com.example.recordsound.broadcast.MyBroadcastReceiver;
 import com.example.recordsound.components.CommandFormat;
 
+import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+
+import org.apache.commons.math3.complex.Complex;
+import org.jtransforms.fft.DoubleFFT_1D;
+
+
 
 public class AudioService extends Service {
 
@@ -305,6 +313,8 @@ public class AudioService extends Service {
     }
 
 
+
+
     private void startPlaybackThread(){
         Log.d(TAG, "startPlaybackThread>>>>>>>>>>>>>");
         isPlayingAudio = true;
@@ -324,20 +334,40 @@ public class AudioService extends Service {
             DataInputStream dataInputStream = new DataInputStream(fileInputStream);
             audioTrack.play();
 
+            DoubleFFT_1D fft = new DoubleFFT_1D(BUFFER_SIZE);
+
+
+            byte[] chunkAudioFileByte = readByte(fileInputStream);
+            Log.d(TAG, "chunkAudioFileByte.length: " + chunkAudioFileByte.length);
+
+            //isPlayingAudio = false;
+
+
             while(isPlayingAudio){
-                //Log.d(TAG, "isPlayingAudio: " + isPlayingAudio);
+                Log.d(TAG, "isPlayingAudio: " + isPlayingAudio);
 
                 try{
-                    int result = dataInputStream.read(buffer, 0, BUFFER_SIZE);
-                    Log.d(TAG, "Play Audio result: " + result);
+                    int readSize = dataInputStream.read(buffer, 0, BUFFER_SIZE);
+                    //Log.d(TAG, "Play Audio readSize: " + readSize);
 
-                    if(result <= 0){
+
+                    if(readSize <= 0){
                         isPlayingAudio = false;
                         stopSelf();
                         break;
                     }
 
-                    audioTrack.write(buffer, 0, result);
+
+                    //Min
+                    Log.d(TAG, "BUFFER_SIZE: " + BUFFER_SIZE);
+                    Log.d(TAG, "readSize: " + readSize);
+
+                    for(int i=0; i<readSize; i++){
+                        //Log.d(TAG, "buffer: " + buffer[i]);
+                        //fft.complexForward();
+                    }
+
+                    audioTrack.write(buffer, 0, readSize);
 
                 } catch (IOException e){
                     Log.e(TAG, e.getMessage());
@@ -367,6 +397,30 @@ public class AudioService extends Service {
             NotificationChannel notificationChannel = new NotificationChannel(channelId, channelName, notificationImportance);
             NotificationManager manager = getSystemService(NotificationManager.class);
             manager.createNotificationChannel(notificationChannel);
+        }
+    }
+
+    private byte[] readByte(FileInputStream stream){
+
+        byte[] audioBytes;
+        int read;
+        byte[] buff = new byte[1024];
+
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        BufferedInputStream in = new BufferedInputStream(stream);
+
+        try{
+            while((read = in.read(buff)) > 0){
+                out.write(buff, 0, read);
+            }
+            out.flush();
+            in.close();
+            audioBytes = out.toByteArray();
+            return audioBytes;
+        } catch (IOException e){
+            audioBytes = null;
+            e.printStackTrace();
+            return null;
         }
     }
 }
