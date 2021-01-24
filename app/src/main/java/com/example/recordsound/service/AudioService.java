@@ -52,7 +52,6 @@ public class AudioService extends Service {
     private int serviceCommand = 0;
 
 
-
     //private static final int CHANNEL_CONFIG = AudioFormat.CHANNEL_IN_MONO;
     private static final int CHANNEL_CONFIG = AudioFormat.CHANNEL_IN_STEREO;
     private static final int AUDIO_FORMAT = AudioFormat.ENCODING_PCM_16BIT;
@@ -334,16 +333,27 @@ public class AudioService extends Service {
             DataInputStream dataInputStream = new DataInputStream(fileInputStream);
             audioTrack.play();
 
-            DoubleFFT_1D fft = new DoubleFFT_1D(BUFFER_SIZE);
+            //DoubleFFT_1D fft = new DoubleFFT_1D(BUFFER_SIZE);
 
 
-            byte[] chunkAudioFileByte = readByte(fileInputStream);
-            Log.d(TAG, "chunkAudioFileByte.length: " + chunkAudioFileByte.length);
+            byte[] audioData = getByteFromSource(fileInputStream);
+            Log.d(TAG, "BUFFER_SIZE: " + BUFFER_SIZE);
+            Log.d(TAG, "audioData.length: " + audioData.length);
 
-            //isPlayingAudio = false;
+            double[] samples = readFileData(audioData); //짝수: 실수부분, 홀수: 허수부분
+
+            double[] frequencies = frequencyAnalysis(samples);
+
+            for(int i=0; i<frequencies.length; i++){
+                Log.d(TAG, "frequencies[" + i + "]: " + frequencies[i]);
+            }
+
+            /*for(double i: samples){
+                Log.d(TAG, "sample: " + i);
+            }*/
 
 
-            while(isPlayingAudio){
+           /* while(isPlayingAudio){
                 Log.d(TAG, "isPlayingAudio: " + isPlayingAudio);
 
                 try{
@@ -373,7 +383,7 @@ public class AudioService extends Service {
                     Log.e(TAG, e.getMessage());
                     e.printStackTrace();
                 }
-            }
+            }*/
 
             audioTrack.stop();
             audioTrack.release();
@@ -400,11 +410,112 @@ public class AudioService extends Service {
         }
     }
 
-    private byte[] readByte(FileInputStream stream){
+
+    private double[] frequencyAnalysis(double[] samples){
+
+
+        //(samples.length - blocksize)/ block_inc + 1 = 388.244
+
+        int BLOCKSIZE = 4410;   //effectively FFT's 0.1 second of sound;
+        int BLOCK_INC = BLOCKSIZE/5; //how much to slide between FFT's  //882
+        int blocks = (samples.length - BLOCKSIZE)/BLOCK_INC + 1;        //388 (왜 전체 데이터 길이에서 blocksize 뺀후 계산을 하지?)
+
+        //an array to hold the frequencies
+        double[] frequencies = new double[blocks];
+        double[] currSamp = new double[BLOCKSIZE];
+        int finish = BLOCK_INC * (blocks - 1);                          //341334
+
+        Log.d(TAG, "samples.length: " + samples.length);          //345960
+        Log.d(TAG, "blocks: " + blocks);
+        Log.d(TAG, "BLOCK_INC: " + BLOCK_INC); //882
+        Log.d(TAG, "finish: " + finish); //341334
+
+        //samples.lenght/block_inc = 392.244897
+        int temp = samples.length/BLOCK_INC;
+        Log.d(TAG, "samples.length/BLOCK_INC: " + samples.length/BLOCK_INC);    //392
+
+
+        int i; //keeps track of the current sample size
+        for(i=0; i < finish; i+=BLOCK_INC){
+
+            //Samples 데이터중 단위블럭 만큼 별도의 임시배열로 복사
+            System.arraycopy(samples, i, currSamp, 0, BLOCKSIZE);
+            int freq = i/BLOCK_INC;
+
+            //Log.d(TAG, i + " freq: " + freq);
+
+            frequencies[freq] = maxFrequency(currSamp);
+
+            /*for(int j=0; j<currSamp.length; j++){
+                *//*if(i==171108) {
+                    Log.d(TAG, samples[j+171108] + " :: " + "j >> " + currSamp[j]);
+                }*//*
+            }*/
+        }
+
+        //Log.d(TAG, "i: " + i);
+
+        return frequencies;
+    }
+
+
+    private double maxFrequency(double[] sound){
+
+        DoubleFFT_1D fftDo = new DoubleFFT_1D(sound.length);
+        double[] fft = new double[sound.length*2];
+        System.arraycopy(sound, 0, fft, 0, sound.length);
+        fftDo.realForwardFull(fft);
+
+        int max_i = -1;
+        double max_fftval = -1;
+
+        for(int i=0; i<fft.length; i+=2){
+            double vlen = Math.sqrt((fft[i] * fft[i] + fft[i+1] * fft[i+1]));
+
+
+            double currFreq = ((i/2.0)/fft.length) * SAMPLE_RATE * 2;
+            if(currFreq != 0){
+                if(max_fftval < vlen){
+                    max_fftval = vlen;
+                    max_i = i;
+                }
+            }
+
+        }
+
+        double dominantFreq = ((max_i/2.0)/fft.length) * SAMPLE_RATE * 2;
+        return dominantFreq;
+    }
+
+
+
+    private double[] readFileData(byte[] fileData){
+
+        double MAX_16_BIT = Short.MAX_VALUE; //32767
+        byte[] currentData;
+        currentData = fileData;
+
+        try{
+            int N = fileData.length;
+            double[] d = new double[N/2];
+            for(int i=0; i<N/2; i++){
+                d[i] = ((short)(((currentData[2*i+1] & 0xFF) << 8) + (currentData[2*i] & 0xFF))) / ((double)MAX_16_BIT);
+            }
+
+            return d;
+
+        } catch (Exception e){
+            Log.e(TAG, "readBufferAsDouble: " + e.getMessage());
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    private byte[] getByteFromSource(FileInputStream stream){
 
         byte[] audioBytes;
         int read;
-        byte[] buff = new byte[1024];
+        byte[] buff = new byte[BUFFER_SIZE];
 
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         BufferedInputStream in = new BufferedInputStream(stream);
@@ -418,7 +529,6 @@ public class AudioService extends Service {
             audioBytes = out.toByteArray();
             return audioBytes;
         } catch (IOException e){
-            audioBytes = null;
             e.printStackTrace();
             return null;
         }
