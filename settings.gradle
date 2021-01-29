@@ -1,2 +1,4 @@
+include ':fftpack-0.1'
+include ':fftpack-0.1'
 include ':app'
 rootProject.name = "RecordSound"

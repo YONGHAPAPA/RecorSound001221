@@ -25,6 +25,7 @@ import com.example.recordsound.MainActivity;
 import com.example.recordsound.R;
 import com.example.recordsound.broadcast.MyBroadcastReceiver;
 import com.example.recordsound.components.CommandFormat;
+import com.example.recordsound.components.FFT;
 
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
@@ -38,8 +39,7 @@ import java.io.IOException;
 
 import org.apache.commons.math3.complex.Complex;
 import org.jtransforms.fft.DoubleFFT_1D;
-
-
+import ca.uol.aig.fftpack.RealDoubleFFT;
 
 public class AudioService extends Service {
 
@@ -126,7 +126,7 @@ public class AudioService extends Service {
     public void onDestroy(){
         super.onDestroy();
 
-        Log.d(TAG, "onDestroy >> " + serviceCommand);
+        //Log.d(TAG, "onDestroy >> " + serviceCommand);
         switch (serviceCommand){
             case CommandFormat.START_RECORD_AUDIO:
                 Log.d(TAG, "recording stop!!!!!");
@@ -149,6 +149,9 @@ public class AudioService extends Service {
             Log.d(TAG, "startRecordAudio!!!!!");
 
             String serviceTitle = intent.getStringExtra("SVC_TITLE");
+
+
+
 
             createNotificationChannel(NOTIFICATION_RECORD_SOUND_CHANNEL_ID, NOTIFICATION_RECORD_SOUND_CHANNEL_NAME, NotificationManager.IMPORTANCE_DEFAULT);
 
@@ -304,7 +307,9 @@ public class AudioService extends Service {
                     .build();
 
             startForeground(1, notification);
-            startPlaybackThread();
+
+            //startPlaybackThreadByStream1();
+            startPlaybackThreadByStream2();
 
         } catch (Exception e){
 
@@ -313,8 +318,72 @@ public class AudioService extends Service {
 
 
 
+    private void startPlaybackThreadByStream2(){
 
-    private void startPlaybackThread(){
+        int BLOCK_SIZE = 1024;
+        int NEW_BLOCK_SIZE = 512;
+        //isPlayingAudio = true;
+        RealDoubleFFT transformer = new RealDoubleFFT(NEW_BLOCK_SIZE);
+
+        playbackAudioThread = new Thread(()->{
+            Log.d(TAG, "<<<<<<<<<<<<<<<<<<<<< start playback an audio >>>>>>>>>>>>>>>>>>");
+
+            byte[] buffer = new byte[BLOCK_SIZE];
+            FileInputStream fileStream = null;
+            DataInputStream dataInputStream = null;
+
+            try{
+                fileStream = new FileInputStream(recordFilePath);
+                dataInputStream = new DataInputStream(fileStream);
+
+            } catch (Exception e){
+                e.printStackTrace();
+            }
+
+            try{
+
+                //Log.d(TAG, "buffer_size: " + BUFFER_SIZE);  //15376
+                boolean isReadBuffer = true;
+                while(isReadBuffer){
+                    int read = dataInputStream.read(buffer, 0, BLOCK_SIZE);
+                    //Log.d(TAG, "read: " + read);    //1024 > 720
+
+                    if(read <= 0){
+                        isReadBuffer = false;
+                        break;
+                    }
+
+                    double[] toTransform = convertFileDataToDouble(buffer);   //byte[] buffer:1024 > double[] audioData:512
+
+                    Log.d(TAG, "audioData length: " + toTransform.length);    //512
+
+                    transformer.ft(toTransform);
+
+
+                    Log.d(TAG, "toTransform length : " + toTransform.length);
+
+
+
+
+
+
+
+                }
+
+
+
+                dataInputStream.close();
+                fileStream.close();
+
+            } catch (Exception e){
+                e.printStackTrace();
+            }
+        });
+
+        playbackAudioThread.start();
+    }
+
+    private void startPlaybackThreadByStream1(){
         Log.d(TAG, "startPlaybackThread>>>>>>>>>>>>>");
         isPlayingAudio = true;
 
@@ -333,33 +402,36 @@ public class AudioService extends Service {
             DataInputStream dataInputStream = new DataInputStream(fileInputStream);
             audioTrack.play();
 
-            //DoubleFFT_1D fft = new DoubleFFT_1D(BUFFER_SIZE);
+//            byte[] audioData = getByteFromSource(fileInputStream);
+//            Log.d(TAG, "BUFFER_SIZE: " + BUFFER_SIZE);              //15376
+//            Log.d(TAG, "audioData.length: " + audioData.length);    //691920
 
 
-            byte[] audioData = getByteFromSource(fileInputStream);
-            Log.d(TAG, "BUFFER_SIZE: " + BUFFER_SIZE);
-            Log.d(TAG, "audioData.length: " + audioData.length);
+            //Audio file 의 byte정보를 double 타입으로 변경
+            //짝수: 실수부분, 홀수: 허수부분
+            //double[] samples = readFileData(audioData);
 
-            double[] samples = readFileData(audioData); //짝수: 실수부분, 홀수: 허수부분
+            //Log.d(TAG, "samples length:" + samples.length); //345960
+            /*for(int i=0; i<samples.length;i++){
+                Log.d(TAG, "[" + i + "]: " + samples[i]);
+            }*/
 
-            double[] frequencies = frequencyAnalysis(samples);
+            //double[] frequencies = frequencyAnalysis(samples);
 
-            for(int i=0; i<frequencies.length; i++){
+            /*for(int i=0; i<frequencies.length; i++){
                 Log.d(TAG, "frequencies[" + i + "]: " + frequencies[i]);
-            }
+            }*/
 
             /*for(double i: samples){
                 Log.d(TAG, "sample: " + i);
             }*/
 
 
-           /* while(isPlayingAudio){
-                Log.d(TAG, "isPlayingAudio: " + isPlayingAudio);
+            while(isPlayingAudio){
+                //Log.d(TAG, "isPlayingAudio: " + isPlayingAudio);
 
                 try{
                     int readSize = dataInputStream.read(buffer, 0, BUFFER_SIZE);
-                    //Log.d(TAG, "Play Audio readSize: " + readSize);
-
 
                     if(readSize <= 0){
                         isPlayingAudio = false;
@@ -367,15 +439,25 @@ public class AudioService extends Service {
                         break;
                     }
 
-
                     //Min
-                    Log.d(TAG, "BUFFER_SIZE: " + BUFFER_SIZE);
-                    Log.d(TAG, "readSize: " + readSize);
+                    //Log.d(TAG, "BUFFER_SIZE: " + BUFFER_SIZE);  //15376
+                    //Log.d(TAG, "readSize: " + readSize);        //15376
 
                     for(int i=0; i<readSize; i++){
                         //Log.d(TAG, "buffer: " + buffer[i]);
                         //fft.complexForward();
                     }
+
+                    //Convert Sample Data type from byte to double
+                    double[] sample = convertFileDataToDouble(buffer);
+                    //Log.d(TAG, "sample.length: " + sample.length); //7688
+
+                    double[] frequencyData = frequencyAnalysis(sample);
+
+                    Log.d(TAG, "Hz: " + frequencyData[0] + "/ mangnitude:" + frequencyData[1]);
+
+
+
 
                     audioTrack.write(buffer, 0, readSize);
 
@@ -383,7 +465,7 @@ public class AudioService extends Service {
                     Log.e(TAG, e.getMessage());
                     e.printStackTrace();
                 }
-            }*/
+            }
 
             audioTrack.stop();
             audioTrack.release();
@@ -411,7 +493,63 @@ public class AudioService extends Service {
     }
 
 
-    private double[] frequencyAnalysis(double[] samples){
+
+
+    private double[] frequencyAnalysis(double[] sample){
+
+        double currFrequency;
+        //int FFT_SIZE = sample.length * 2; //7688 ---> FFT_SIZE 는 2에 제곱승 이여야하는데 7688은 2제곱승이 아닌데...
+        int FFT_SIZE = 1024;
+        DoubleFFT_1D fft = new DoubleFFT_1D(FFT_SIZE);
+        double[] fftData = new double[sample.length*2];
+        double[] magnitude = new double[sample.length];
+        
+        
+        //FFT Length는 2의 제곱승 체크
+        int n = FFT_SIZE;
+        int m = (int)(Math.log(n) / Math.log(2));
+        if(n != (1<<m))
+            throw new RuntimeException("FFT length must be power of 2");
+
+        for(int i=0; i<sample.length; i++){
+            fftData[2*i] = sample[i];   //sin파의 합을 넣는다고 보면되겠네...
+            fftData[2*i+1] = 0;
+        }
+
+        fft.complexForward(fftData);    //fftData 에 output data overwrite 처리
+        //Log.d(TAG, "fftData.length: " + fftData.length);    //15376
+
+
+        //fftData 는 퓨리에변환된 실수(짝수index), 허수(홀수index) 데이터가 담겨있는 주파수에 대한 진폭정보
+        for(int i=0; i<sample.length; i++){
+            double re = fftData[2*i];
+            double im = fftData[2*i+1];
+            magnitude[i] = Math.sqrt((re*re + im*im)); //
+        }
+
+
+        int i_fq=0;
+        double max_magnitude = -1;
+        double max_i = -1;
+
+        for(int i=0; i<sample.length; i++){
+            if(magnitude[i] > max_magnitude){
+                max_magnitude = magnitude[i];
+                max_i = i;
+           }
+        }
+
+        currFrequency = (SAMPLE_RATE * max_i) / sample.length;  //Frequency = Sample Rate * index / FFT Length
+
+        double[] frequency = new double[2];
+        frequency[0] = currFrequency;
+        frequency[1] = max_magnitude;
+
+        return frequency;
+    }
+
+
+    private double[] frequencyAnalysis1(double[] samples){
 
 
         //(samples.length - blocksize)/ block_inc + 1 = 388.244
@@ -445,12 +583,6 @@ public class AudioService extends Service {
             //Log.d(TAG, i + " freq: " + freq);
 
             frequencies[freq] = maxFrequency(currSamp);
-
-            /*for(int j=0; j<currSamp.length; j++){
-                *//*if(i==171108) {
-                    Log.d(TAG, samples[j+171108] + " :: " + "j >> " + currSamp[j]);
-                }*//*
-            }*/
         }
 
         //Log.d(TAG, "i: " + i);
@@ -489,7 +621,7 @@ public class AudioService extends Service {
 
 
 
-    private double[] readFileData(byte[] fileData){
+    private double[] convertFileDataToDouble(byte[] fileData){
 
         double MAX_16_BIT = Short.MAX_VALUE; //32767
         byte[] currentData;
@@ -515,7 +647,7 @@ public class AudioService extends Service {
 
         byte[] audioBytes;
         int read;
-        byte[] buff = new byte[BUFFER_SIZE];
+        byte[] buff = new byte[BUFFER_SIZE];    //BUFFER_SIZE: 15376
 
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         BufferedInputStream in = new BufferedInputStream(stream);
