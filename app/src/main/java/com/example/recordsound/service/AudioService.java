@@ -75,6 +75,7 @@ public class AudioService extends Service {
     private boolean currentlySendingAudio = false;
     private boolean isPlayingAudio = false;
 
+
     private Thread recordAudioThread;
     private Thread playbackAudioThread;
     FileOutputStream fileOutputStream;
@@ -362,6 +363,8 @@ public class AudioService extends Service {
 
 
 
+
+
         playbackAudioThread = new Thread(()->{
             Log.d(TAG, "<<<<<<<<<<<<<<<<<<<<< start playback an audio >>>>>>>>>>>>>>>>>>");
 
@@ -392,7 +395,10 @@ public class AudioService extends Service {
                 //boolean isReadBuffer = true;
 
 
+                int bufferReadNumber = 0;
                 while(isPlayingAudio){
+
+
                     //int readSize = dataInputStream.read(buffer, 0, BLOCK_SIZE);
                     int readSize = dataInputStream.read(buffer, 0, BUFFER_SIZE);
 
@@ -401,7 +407,7 @@ public class AudioService extends Service {
                     //int readSize = dataInputStream.read(buffer, 0, BUFFER_SIZE_AT);
 
 
-                    Log.d(TAG, "readSize: " + readSize);    //1024 > 720
+                    //Log.d(TAG, "readSize: " + readSize);    //1024 > 720
 
                     if(readSize <= 0){
                         //isReadBuffer = false;
@@ -443,16 +449,20 @@ public class AudioService extends Service {
 
 
                     fftRealArray = new float[shortBuffer.length];
+                    volume = 0;
                     for(int i=0; i<shortBuffer.length; i++){
                         fftRealArray[i] = (float)shortBuffer[i]/Short.MAX_VALUE; //32768.0
 
-                        Log.d(TAG, "fftRealArray[" + i +"]" + fftRealArray[i]);
+                        //Log.d(TAG, "fftRealArray[" + i +"]" + Math.abs(fftRealArray[i]));
                         volume += Math.abs(fftRealArray[i]);
                     }
 
+                    Log.d(TAG, bufferReadNumber + " volume: " + volume + " > " + volume/shortBuffer.length);
+
                     volume = (float)Math.log10(volume/shortBuffer.length);
 
-                    Log.d(TAG, "volume: " + volume);
+                    //Log.d(TAG, bufferReadNumber + " volume: " + volume);
+                    Log.d(TAG, "last volume >>>>>>>>>>>>> " + volume);
 
                     //Get Volume
                     //volume
@@ -472,6 +482,11 @@ public class AudioService extends Service {
 
                     }*/
 
+
+                    bufferReadNumber++;
+
+
+
                 }
 
 
@@ -485,6 +500,7 @@ public class AudioService extends Service {
             } catch (Exception e){
                 e.printStackTrace();
                 isPlayingAudio = false;
+
             }
         });
 
@@ -787,4 +803,7 @@ public class AudioService extends Service {
             return null;
         }
     }
+
+
+
 }
