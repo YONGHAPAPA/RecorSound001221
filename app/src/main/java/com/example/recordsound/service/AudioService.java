@@ -16,7 +16,6 @@ import android.os.Environment;
 import android.os.IBinder;
 import android.os.Process;
 import android.provider.MediaStore;
-import android.renderscript.Sampler;
 import android.util.Log;
 
 import androidx.annotation.Nullable;
@@ -55,7 +54,7 @@ public class AudioService extends Service {
 
     //private static final int CHANNEL_CONFIG = AudioFormat.CHANNEL_IN_MONO;
     private static final int CHANNEL_CONFIG = AudioFormat.CHANNEL_IN_STEREO;
-    private static final int AUDIO_FORMAT = AudioFormat.ENCODING_PCM_16BIT;
+    private static final int AUDIO_FORMAT = AudioFormat.ENCODING_PCM_16BIT; //Level 0 ~ 32767
 
     private static final String NOTIFICATION_RECORD_SOUND_CHANNEL_ID = "AUDIO_SVC_CHANNEL";
     private static final String NOTIFICATION_RECORD_SOUND_CHANNEL_NAME = "Audio Service";
@@ -64,26 +63,19 @@ public class AudioService extends Service {
     private AudioTrack audioTrack;
 
     //Sample Rate 는 아날로그 신호를 디지털로 변환 할 때, 1초당 몇개의 sample 을 추출할 것인가
-    private static final int SAMPLE_RATE = 44100;
-    //private static final int SAMPLE_RATE = AudioTrack.getNativeOutputSampleRate(AudioManager.STREAM_SYSTEM);    //48000
+    //private static final int SAMPLE_RATE = 44100;
+    private static final int SAMPLE_RATE = AudioTrack.getNativeOutputSampleRate(AudioManager.STREAM_SYSTEM);    //48000
 
-    private int BUFFER_SIZE;
-    private static int BUFFER_SIZE_AR = AudioRecord.getMinBufferSize(SAMPLE_RATE, CHANNEL_CONFIG, AUDIO_FORMAT);  //7104
-    private static int BUFFER_SIZE_AT = AudioTrack.getMinBufferSize(SAMPLE_RATE, CHANNEL_CONFIG, AUDIO_FORMAT); //14144(SR:44100 STREO), 15376(SampleRate:48000, stereo)
-    private static int NEW_BUFFER_SIZE;
+    //private static int BUFFER_SIZE = AudioRecord.getMinBufferSize(SAMPLE_RATE, CHANNEL_CONFIG, AUDIO_FORMAT);  //7104
+    private static int BUFFER_SIZE = AudioTrack.getMinBufferSize(SAMPLE_RATE, CHANNEL_CONFIG, AUDIO_FORMAT); //14144, 15376(SampleRate:48000, stereo)
 
     private boolean currentlySendingAudio = false;
     private boolean isPlayingAudio = false;
-
 
     private Thread recordAudioThread;
     private Thread playbackAudioThread;
     FileOutputStream fileOutputStream;
     DataOutputStream dataOutputStream;
-
-    FFT fft;
-    float[] fftRealArray = null;
-    float volume = 0;
 
     String recordFilePath = Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + "recordSound.3gpp";
 
@@ -103,23 +95,9 @@ public class AudioService extends Service {
 
         //SAMPLE_RATE
         //BUFFER_SIZE
-        Log.d(TAG, "BUFFER_SIZE_AR: " + BUFFER_SIZE_AR);
-        Log.d(TAG, "BUFFER_SIZE_AT: " + BUFFER_SIZE_AT);
 
-        //NEW_BUFFER_SIZE = getHigherP2(BUFFER_SIZE_AR);
-        NEW_BUFFER_SIZE = getHigherP2(BUFFER_SIZE_AT); //16384 (power of 2)
-
-        //BUFFER_SIZE = BUFFER_SIZE_AR;
-        //BUFFER_SIZE = BUFFER_SIZE_AT;
-        BUFFER_SIZE = NEW_BUFFER_SIZE;
-
-        Log.d(TAG, "NEW_BUFFER_SIZE:" + NEW_BUFFER_SIZE);
-        //Log.d(TAG, "SAMPLE_RATE: " + SAMPLE_RATE);
+        Log.d(TAG, "SAMPLE_RATE: " + SAMPLE_RATE);
         Log.d(TAG, "BUFFER_SIZE: " + BUFFER_SIZE);
-        
-        //buffer size 8192 : 정상 (Audio Record Min Buffer size)
-        //buffer size 16384 : 정상 (Audio Track Min Buffer size)
-
 
         serviceCommand = intent.getIntExtra("CMD", 0);
 
@@ -174,6 +152,7 @@ public class AudioService extends Service {
 
 
 
+
             createNotificationChannel(NOTIFICATION_RECORD_SOUND_CHANNEL_ID, NOTIFICATION_RECORD_SOUND_CHANNEL_NAME, NotificationManager.IMPORTANCE_DEFAULT);
 
             Intent notificationIntent = new Intent(this, MainActivity.class);
@@ -210,7 +189,7 @@ public class AudioService extends Service {
 
     private void startRecordStreaming(){
 
-        //currentlySendingAudio = true;
+        currentlySendingAudio = true;
 
         recordAudioThread = new Thread(() -> {
             try{
@@ -226,20 +205,13 @@ public class AudioService extends Service {
 
                 //short[] buffer = new short[bufferSize];
                 byte[] buffer = new byte[BUFFER_SIZE];
-                //byte[] buffer = new byte[NEW_BUFFER_SIZE];
 
                 android.os.Process.setThreadPriority(Process.THREAD_PRIORITY_AUDIO);
                 //Log.e(TAG, "Creating the AudioRecord");
                 recorder = new AudioRecord(MediaRecorder.AudioSource.MIC, SAMPLE_RATE, CHANNEL_CONFIG, AUDIO_FORMAT, BUFFER_SIZE);
-                //recorder = new AudioRecord(MediaRecorder.AudioSource.MIC, SAMPLE_RATE, CHANNEL_CONFIG, AUDIO_FORMAT, NEW_BUFFER_SIZE);
 
-
-                if(recorder != null && recorder.getState() == AudioRecord.STATE_INITIALIZED){
-                    //Log.e(TAG, "AudioRecord recording....");
-                    recorder.startRecording();
-                    currentlySendingAudio = true;
-                }
-
+                //Log.e(TAG, "AudioRecord recording....");
+                recorder.startRecording();
 
                 //String recordFilePath = Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + CommonUtil.getCurrentDateWithTime(CommonUtil.DATE_FORMAT_FILE) + ".3gpp";
                 //String recordFilePath = Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + "recordsound.3gpp";
@@ -250,7 +222,6 @@ public class AudioService extends Service {
                     dataOutputStream = new DataOutputStream(fileOutputStream);
                 } catch (FileNotFoundException e){
                     Log.e(TAG, e.getMessage());
-                    currentlySendingAudio = false;
                 }
 
                 while(currentlySendingAudio == true){
@@ -263,7 +234,6 @@ public class AudioService extends Service {
                         dataOutputStream.write(buffer, 0, BUFFER_SIZE);
                     } catch (IOException e){
                         Log.e(TAG, e.getMessage());
-                        currentlySendingAudio = false;
                     }
 
                     //Min
@@ -277,7 +247,7 @@ public class AudioService extends Service {
 
                     double db = 0;
                     if(maxAmplitude != 0){
-                        db = 20.0 * Math.log10(maxAmplitude / 32767.0) + 90; //short(16bit) 타입 범위(-32768 ~ 32767)
+                        db = 20.0 * Math.log10(maxAmplitude / 32767.0) + 90;
                     }
 
                     //Log.e(TAG, "Max amplitude : " + maxAmplitude + " ; DB: " + db);
@@ -311,9 +281,6 @@ public class AudioService extends Service {
             //String input = intent.getStringExtra("inputExtra");
             String serviceTitle = intent.getStringExtra("SVC_TITLE");
             audioTrack = new AudioTrack(AudioManager.STREAM_MUSIC, SAMPLE_RATE, CHANNEL_CONFIG, AUDIO_FORMAT, BUFFER_SIZE, AudioTrack.MODE_STREAM);
-            //audioTrack = new AudioTrack(AudioManager.STREAM_MUSIC, SAMPLE_RATE, CHANNEL_CONFIG, AUDIO_FORMAT, NEW_BUFFER_SIZE, AudioTrack.MODE_STREAM);
-
-
 
             createNotificationChannel(NOTIFICATION_RECORD_SOUND_CHANNEL_ID, NOTIFICATION_RECORD_SOUND_CHANNEL_NAME, NotificationManager.IMPORTANCE_DEFAULT);
 
@@ -341,39 +308,26 @@ public class AudioService extends Service {
 
             startForeground(1, notification);
 
-            //startPlaybackThreadByStream1();
-            startPlaybackThreadByStream2();
+            startPlaybackThreadByStream1();
+            //startPlaybackThreadByStream2();
 
         } catch (Exception e){
-
-            Log.e(TAG, e.getMessage());
 
         }
     }
 
 
-
     private void startPlaybackThreadByStream2(){
 
-        int TEST_SIZE = 100;
         int BLOCK_SIZE = 1024;
         int NEW_BLOCK_SIZE = 512;
-        isPlayingAudio = true;
-
-
-
-
-
+        //isPlayingAudio = true;
+        RealDoubleFFT transformer = new RealDoubleFFT(NEW_BLOCK_SIZE);
 
         playbackAudioThread = new Thread(()->{
             Log.d(TAG, "<<<<<<<<<<<<<<<<<<<<< start playback an audio >>>>>>>>>>>>>>>>>>");
 
-            //byte[] buffer = new byte[BLOCK_SIZE];     //1024
-            byte[] buffer = new byte[BUFFER_SIZE];  //15376
-            //byte[] buffer = new byte[NEW_BUFFER_SIZE];  //4096
-            //byte[] buffer = new byte[BUFFER_SIZE_AT];
-            //byte[] buffer = new byte[TEST_SIZE];    //100
-            //short[] shortBuffer = new short[BUFFER_SIZE];
+            byte[] buffer = new byte[BLOCK_SIZE];
             FileInputStream fileStream = null;
             DataInputStream dataInputStream = null;
 
@@ -387,105 +341,25 @@ public class AudioService extends Service {
 
             try{
 
+
+                //Activity.runOnUiThread  UI 업데이트처리시 사용
+                
                 //Log.d(TAG, "buffer_size: " + BUFFER_SIZE);  //15376
+                boolean isReadBuffer = true;
+                while(isReadBuffer){
+                    int read = dataInputStream.read(buffer, 0, BLOCK_SIZE);
+                    //Log.d(TAG, "read: " + read);    //1024 > 720
 
-
-                audioTrack.play();
-
-                //boolean isReadBuffer = true;
-
-
-                int bufferReadNumber = 0;
-                while(isPlayingAudio){
-
-
-                    //int readSize = dataInputStream.read(buffer, 0, BLOCK_SIZE);
-                    int readSize = dataInputStream.read(buffer, 0, BUFFER_SIZE);
-
-
-                    //int readSize = dataInputStream.read(buffer, 0, NEW_BUFFER_SIZE);
-                    //int readSize = dataInputStream.read(buffer, 0, BUFFER_SIZE_AT);
-
-
-                    //Log.d(TAG, "readSize: " + readSize);    //1024 > 720
-
-                    if(readSize <= 0){
-                        //isReadBuffer = false;
-                        isPlayingAudio = false;
+                    if(read <= 0){
+                        isReadBuffer = false;
                         break;
                     }
 
+                    double[] toTransform = convertFileDataToDouble(buffer);   //byte[] buffer:1024 > double[] audioData:512
 
-
-                    //byte[](8bit)-> short[](2byte, 16bit)
-                    //byte.length = 1/2 * short.length
-                    //double[] toTransform = convertByteToDouble(buffer);   //byte[] buffer:1024 > double[] audioData:512
-
-                    //Log.d(TAG, "audioData length: " + toTransform.length);    //512
-                    //transformer.ft(toTransform);
-
-                    audioTrack.write(buffer,0, readSize);
-
-
-
-
-                    double curr_frequency = 0;
-                    double magnitude = 0;
-
-
-                    //Convert byte to short type
-                    short[] shortBuffer = new short[buffer.length];
-
-                    for(int i=0; i<buffer.length;i++){
-                        shortBuffer[i] = (short)buffer[i];
-                    }
-
-                    //Log.d(TAG, "toTransform length : " + toTransform.length);   //512
-                    fft = new FFT(shortBuffer.length, SAMPLE_RATE);
-
-                    float maxFreqToDraw = 2500;
-                    Log.d(TAG, "fft.freqToIndex: " + fft.freqToIndex(maxFreqToDraw));
-
-
-
-                    fftRealArray = new float[shortBuffer.length];
-                    volume = 0;
-                    for(int i=0; i<shortBuffer.length; i++){
-                        fftRealArray[i] = (float)shortBuffer[i]/Short.MAX_VALUE; //32768.0
-
-                        //Log.d(TAG, "fftRealArray[" + i +"]" + Math.abs(fftRealArray[i]));
-                        volume += Math.abs(fftRealArray[i]);
-                    }
-
-                    Log.d(TAG, bufferReadNumber + " volume: " + volume + " > " + volume/shortBuffer.length);
-
-                    volume = (float)Math.log10(volume/shortBuffer.length);
-
-                    //Log.d(TAG, bufferReadNumber + " volume: " + volume);
-                    Log.d(TAG, "last volume >>>>>>>>>>>>> " + volume);
-
-                    //Get Volume
-                    //volume
-
-
-
-
-
-                    /*for(int i=0; i<toTransform.length; i++){
-
-                        //Sample rate : 48000
-                        //46.875Hz
-                        curr_frequency = i * SAMPLE_RATE / toTransform.length;
-                        magnitude = toTransform[i];
-
-                        //Log.d(TAG, "freq: " + curr_frequency + " / " + magnitude);
-
-                    }*/
-
-
-                    bufferReadNumber++;
-
-
+//                    Log.d(TAG, "audioData length: " + toTransform.length);    //512
+//                    transformer.ft(toTransform);
+//                    Log.d(TAG, "toTransform length : " + toTransform.length);
 
                 }
 
@@ -494,29 +368,12 @@ public class AudioService extends Service {
                 dataInputStream.close();
                 fileStream.close();
 
-                audioTrack.stop();
-                audioTrack.release();
-
             } catch (Exception e){
                 e.printStackTrace();
-                isPlayingAudio = false;
-
             }
         });
 
         playbackAudioThread.start();
-    }
-
-
-    int getHigherP2(int val){
-        val--;
-        val |= val >> 1;
-        val |= val >> 2;
-        val |= val >> 8;
-        val |= val >> 16;
-        //val |= val >> 32;
-        val++;
-        return (val);
     }
 
     private void startPlaybackThreadByStream1(){
@@ -537,8 +394,6 @@ public class AudioService extends Service {
 
             DataInputStream dataInputStream = new DataInputStream(fileInputStream);
             audioTrack.play();
-
-
 
 //            byte[] audioData = getByteFromSource(fileInputStream);
 //            Log.d(TAG, "BUFFER_SIZE: " + BUFFER_SIZE);              //15376
@@ -581,21 +436,66 @@ public class AudioService extends Service {
                     //Log.d(TAG, "BUFFER_SIZE: " + BUFFER_SIZE);  //15376
                     //Log.d(TAG, "readSize: " + readSize);        //15376
 
-                    for(int i=0; i<readSize; i++){
-                        //Log.d(TAG, "buffer: " + buffer[i]);
-                        //fft.complexForward();
-                    }
+//                    for(int i=0; i<readSize; i++){
+//                        //Log.d(TAG, "buffer: " + buffer[i]);
+//                        //fft.complexForward();
+//                    }
 
                     //Convert Sample Data type from byte to double
-                    double[] sample = convertByteToDouble(buffer);
+                    //double[] sample = convertFileDataToDouble(buffer);
+
+//                    for(int i=0; i<sample.length; i++){
+//                        Log.d(TAG, "sample : " + sample[i]);
+//                    }
                     //Log.d(TAG, "sample.length: " + sample.length); //7688
 
-                    double[] frequencyData = frequencyAnalysis(sample);
-
-                    Log.d(TAG, "Hz: " + frequencyData[0] + "/ mangnitude:" + frequencyData[1]);
-
+//                    double[] frequencyData = frequencyAnalysis(sample);
+//                    Log.d(TAG, "Hz: " + frequencyData[0] + "/ mangnitude:" + frequencyData[1]);
 
 
+
+                    float amp = 0f;
+                    float peak = 0f;
+                    float[] samples = new float[readSize/2];
+                    float lastPeak = 0f;
+
+                    //convert bytes to samples
+                    for(int i=0, s=0; i<readSize;){
+                        int sample = 0;
+
+                        sample |= buffer[i++] & 0xFF;   //reverse these two lines
+                        sample |= buffer[i++] << 8;     //if the format is big endian
+
+                        //normalize to range of +/-1.0f
+                        samples[s++] = sample / 32768f;
+                    }
+
+                    float rms = 0f;
+
+//                    Log.d(TAG, "readSize: " + readSize);
+//                    Log.d(TAG, "samples Size: " + samples.length);
+
+                    for(float sample : samples){
+                        float abs = Math.abs(sample);
+
+                        //Log.d(TAG, "abs: " + abs);
+                        if(abs > peak){
+                            peak = abs;
+                        }
+
+                        rms += sample * sample;
+                    }
+
+                    rms = (float)Math.sqrt(rms/samples.length);
+
+                    if(lastPeak > peak){
+                        peak = lastPeak * 0.875f;
+                    }
+
+                    lastPeak = peak;
+
+                    Log.d(TAG,"rms: " + Math.abs(rms));
+                    Log.d(TAG,"Peak: " + Math.abs(peak));
 
                     audioTrack.write(buffer, 0, readSize);
 
@@ -620,6 +520,11 @@ public class AudioService extends Service {
 
         playbackAudioThread.start();
     }
+
+
+
+
+
 
 
     private void createNotificationChannel(String channelId, String channelName, int notificationImportance) {
@@ -759,7 +664,7 @@ public class AudioService extends Service {
 
 
 
-    private double[] convertByteToDouble(byte[] fileData){
+    private double[] convertFileDataToDouble(byte[] fileData){
 
         double MAX_16_BIT = Short.MAX_VALUE; //32767
         byte[] currentData;
@@ -803,7 +708,4 @@ public class AudioService extends Service {
             return null;
         }
     }
-
-
-
 }
